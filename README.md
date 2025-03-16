@@ -14,8 +14,8 @@ It has scripts, automations, and pipelines to help with:
 - Basic config template rendering
 
 > [!NOTE]
-> Currently it only supports Forge modpacks.
-> If there is demand for NeoForge or others, I can see about adding support.
+> Currently only Forge modpacks are supported.
+> If there is demand for NeoForge or others, support can be added.
 
 ### Recomended Mods
 

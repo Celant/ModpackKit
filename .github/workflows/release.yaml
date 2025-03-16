@@ -1,0 +1,185 @@
+name: Release Workflow
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: write
+  packages: write
+  issues: write
+
+jobs:
+  build_client:
+    name: Build Client Archive
+    runs-on: windows-latest
+    steps:
+      - name: Get Release Info
+        run: echo ("RELEASE_TAG=" + $env:GITHUB_REF.replace('refs/tags/', '')) >> "$env:GITHUB_ENV"
+      
+      - name: Checkout Code
+        uses: actions/checkout@v2
+      
+      - name: Setup Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: temurin
+          java-version: '22'
+      
+      - name: Run modpack-export.ps1 (Client)
+        shell: pwsh
+        run: ./automation/modpack-export.ps1 -ReleaseVersion $env:RELEASE_TAG -Client
+      
+      - name: Upload Client Archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-archive
+          path: builds/client/*.zip
+
+  build_server:
+    name: Build Server Archive
+    runs-on: windows-latest
+    steps:
+      - name: Get Release Info
+        run: echo ("RELEASE_TAG=" + $env:GITHUB_REF.replace('refs/tags/', '')) >> "$env:GITHUB_ENV"
+
+      - name: Checkout Code
+        uses: actions/checkout@v2
+      
+      - name: Setup Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: temurin
+          java-version: '22'
+      
+      - name: Run modpack-export.ps1 (Server)
+        shell: pwsh
+        run: ./automation/modpack-export.ps1 -ReleaseVersion $env:RELEASE_TAG -Server
+      
+      - name: Upload Server Archive
+        uses: actions/upload-artifact@v4
+        with:
+          name: server-archive
+          path: builds/server/*.zip
+
+  generate_changelog:
+    name: Generate Changelog
+    runs-on: windows-latest
+    steps:
+      - name: Get Release Info
+        run: echo ("RELEASE_TAG=" + $env:GITHUB_REF.replace('refs/tags/', '')) >> "$env:GITHUB_ENV"
+
+      - name: Checkout Code
+        uses: actions/checkout@v2
+      
+      - name: Setup Java
+        uses: actions/setup-java@v2
+        with:
+          distribution: temurin
+          java-version: '22'
+      
+      - name: Generate Changelog
+        shell: pwsh
+        run: ./automation/generate-changelog.ps1 -ReleaseVersion $env:RELEASE_TAG
+      
+      - name: Upload Changelog
+        uses: actions/upload-artifact@v4
+        with:
+          name: changelog
+          path: builds/changelog.md
+
+  create_release:
+    name: Create GitHub Release
+    runs-on: windows-latest
+    needs: [build_client, build_server, generate_changelog]
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+      
+      - name: Download Client Archive
+        uses: actions/download-artifact@v4
+        with:
+          name: client-archive
+          path: builds/client
+      
+      - name: Download Server Archive
+        uses: actions/download-artifact@v4
+        with:
+          name: server-archive
+          path: builds/server
+      
+      - name: Download Changelog
+        uses: actions/download-artifact@v4
+        with:
+          name: changelog
+          path: builds
+      
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            ./builds/client/*.zip
+            ./builds/server/*.zip
+          body_path: ./builds/changelog.md
+
+  curseforge_upload:
+    name: CurseForge Upload
+    runs-on: windows-latest
+    needs: create_release
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+      
+      - name: Download Client Archive
+        uses: actions/download-artifact@v4
+        with:
+          name: client-archive
+          path: builds/client
+      
+      - name: Download Server Archive
+        uses: actions/download-artifact@v4
+        with:
+          name: server-archive
+          path: builds/server
+
+      - name: Download Changelog
+        uses: actions/download-artifact@v4
+        with:
+          name: changelog
+          path: builds
+      
+      - name: Get Client Artifact Name
+        id: client
+        shell: pwsh
+        run: |
+          $file = Get-ChildItem -Path "builds/client" -Force -Recurse -File | Select-Object -First 1
+          $path = $file.FullName | Resolve-Path -Relative
+          echo "file-name=$path" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+      
+      - name: Get Server Artifact Name
+        id: server
+        shell: pwsh
+        run: |
+          $file = Get-ChildItem -Path "builds/server" -Force -Recurse -File | Select-Object -First 1
+          $path = $file.FullName | Resolve-Path -Relative
+          echo "file-name=$path" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+      
+      - name: Run CurseForge Upload
+        shell: pwsh
+        run: ./automation/curseforge-upload.ps1 -ClientArchive "${{ steps.client.outputs.file-name }}" -ServerArchive "${{ steps.server.outputs.file-name }}" -Changelog ./builds/changelog.md
+        env:
+          CURSEFORGE_API_KEY: ${{ secrets.CURSEFORGE_API_KEY }}
+  
+  cleanup:
+    name: Cleanup
+    runs-on: windows-latest
+    if: always()
+    needs: curseforge_upload
+    steps:
+      - uses: geekyeggo/delete-artifact@v5
+        with:
+          name: |
+            client-archive
+            server-archive
+            changelog
+          failOnError: false

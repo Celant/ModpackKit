@@ -1,0 +1,7 @@
+
+[general]
+	modpackProjectID = [[MODPACK_PROJECT_ID]]
+	modpackName = "[[MODPACK_NAME]]"
+	modpackVersion = "[[MODPACK_VERSION]]"
+	useMetadata = false
+

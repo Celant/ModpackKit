@@ -1,0 +1,61 @@
+# Client data
+/crash-reports
+/libraries
+/llibrary
+/local
+/logs
+/mods
+/saves
+/screenshots
+/world_backup
+/world
+
+
+/options.txt
+/servers.dat*
+/usercache.json
+/usernamecache.json
+**/*.log
+
+# Mod data
+/.bobby
+/.mixin.out
+/blueprints
+/Distant_Horizons_server_data
+/data
+/docker/**
+/downloads
+/dumps
+/ESM
+/fancymenu_data
+/immersive_paintings_cache
+/kubejs/exported
+/modernfix
+/patchouli_books
+/schematics
+/scripts
+/xaero
+/Xaero*
+
+/patchouli_data.json
+/rhino.local.properties
+
+# Random files
+**/*.exe
+*.dll
+**/*.zip
+/.curseclient
+/observable_announce
+
+# ModpackKit
+/builds
+/overrides
+
+# Instance Sync
+**/*.jar
+!InstanceSync*.jar
+**/*.jar.disabled
+**/*.jar.meta
+
+# Configs
+/config/

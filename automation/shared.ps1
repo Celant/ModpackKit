@@ -100,6 +100,10 @@ function New-ManifestJson {
             continue
         }
 
+        if ($addon.isEnabled -eq $false) {
+            continue
+        }
+
         $mod = @{
             "projectID" = $addon.addonID
             "fileID" = $addon.installedFile.id

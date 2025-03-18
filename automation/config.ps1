@@ -18,8 +18,31 @@ $CONTENT_FOLDERS = @(
 # CurseForge project IDs to exclude from server exports.
 # This prevents them being downloaded and included in the server pack.
 $CLIENT_ONLY_MODS = @(
-    254284 # AmbientSounds 6
-    257814 # CreativeCore
+    254284  # AmbientSounds 6
+    250398  # Controlling
+    257814  # CreativeCore
+    908741  # Embeddium
+    448233  # Entity Culling
+    363363  # Extreme Sound Muffler
+    463155  # Falling Leaves
+    367706  # FancyMenu
+    882495  # Fix GPU memory leak
+    854949  # Fusion
+    686911  # ImmediatelyFast
+    976858  # Inventory Tweaks
+    561885  # Just Zoom
+    561885  # Light Overlay
+    60089   # Mouse Tweaks
+    1140741 # NeoAuth
+    581495  # Oculus
+    521480  # Skin Layers 3D
+    551736  # Sodium/Embeddium Dynamic Lights
+    558905  # Sodium/Embeddium Extras
+    1103431 # Sodium/Embeddium Options API
+    1146393 # Sodium/Embeddium Options Mod Compat
+    535489  # Sound Physics Remastered
+
+    422288 # Misa's Realistic (resource pack)
 )
 
 # Set strategy:

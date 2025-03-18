@@ -272,6 +272,8 @@ You can check this from the "Actions" tab in GitHub.
 
 Sometimes we may change things in these scripts or add new improvements. Generally I'll try and keep the GitHub Releases on this repo up to date.
 
+Additionally, we store a `VERSION.md` in the `automations/` folder, so you can easily tell what release of the automation scripts your modpack repo is currently using.
+
 ## Contributions
 
 I'm always open to contributions, suggestions, and more! Please file a GitHub issue if you have any problems.

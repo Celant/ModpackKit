@@ -9,7 +9,7 @@ It has scripts, automations, and pipelines to help with:
 - GitHub Actions pipeline to automatically publish to CurseForge
 - Generating server files (and excluding client-only mods)
 - Generating changelogs between CurseForge releases
-- Automatic syncing of modpack jar files when pulling git changes with [InstanceSync](https://github.com/Vazkii/InstanceSync/)
+- Automatic syncing of modpack jar files when pulling git changes with [InstanceSync](https://github.com/Celant/InstanceSync/)
 - Token replacement within config files
 - Basic config template rendering
 

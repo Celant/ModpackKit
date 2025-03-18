@@ -50,6 +50,11 @@ function Save-ModpackReleaseFile {
         [string]$FileId
     )
 
+    # Ensure builds folder exists
+    if (-not (Test-Path "$INSTANCE_ROOT\$BUILDS_FOLDER")) {
+        New-Item -ItemType Directory -Path "$INSTANCE_ROOT\$BUILDS_FOLDER"
+    }
+
     $url = "https://www.curseforge.com/api/v1/mods/$ModpackId/files/$FileId/download"
     curl.exe -sSL -o "$INSTANCE_ROOT\$BUILDS_FOLDER\previous.zip" $url
 }

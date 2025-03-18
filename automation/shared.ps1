@@ -7,6 +7,7 @@ $MINECRAFT_INSTANCE_FILE = "minecraftinstance.json"
 $OVERRIDES_FOLDER = "overrides"
 $BUILDS_FOLDER = "builds"
 $SERVER_FILES_FOLDER = "server"
+$CACHE_FOLDER = Join-Path $BUILDS_FOLDER ".cache"
 $INSTANCE_ROOT = ("$PSScriptRoot\.." | Resolve-Path)
 
 . "$PSScriptRoot\config.ps1"
@@ -44,7 +45,6 @@ function Get-ContentPaths {
         foreach ($item in $items) {
             $relativePath = $item.FullName.Replace("$INSTANCE_ROOT\", "")
             $allowed = Test-ContentPath $relativePath
-            Write-Host "Checking $($relativePath): $allowed" -ForegroundColor Yellow
             if ($allowed) {
                 $content += $relativePath
             }

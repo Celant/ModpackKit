@@ -164,13 +164,29 @@ function Save-ModFile {
         [Parameter(Mandatory=$true)]
         [psobject]$Mod
     )
-    
+
+    $modCache = "$CACHE_FOLDER\$($Mod.addonID)"
+    $modCachedFile = "$modCache\$($Mod.installedFile.id)"
     $modFile = "$ReleaseFolder\mods\$($Mod.fileNameOnDisk)"
+
     if (-not (Test-Path $modFile)) {
+        if (Test-Path $modCachedFile) {
+            Write-Host "Found cached file for $($Mod.fileNameOnDisk)" -ForegroundColor Cyan
+            Copy-Item -Path $modCachedFile -Destination $modFile -Force
+            return
+        }
+
         Write-Host "Downloading $($Mod.fileNameOnDisk)..." -ForegroundColor Cyan
         Write-Host $Mod.installedFile.downloadUrl
 
-        curl.exe -sSL -o "$modFile" "$($Mod.installedFile.downloadUrl)"
+        if (-not (Test-Path $modCache)) {
+            New-Item -ItemType Directory -Path $modCache | Out-Null
+        }
+        curl.exe -sSL -o "$modCachedFile" "$($Mod.installedFile.downloadUrl)"
+        Copy-Item -Path $modCachedFile -Destination $modFile -Force
+
+        # Cleanup old cached files
+        Get-ChildItem -Path $modCache | Where-Object { $_.Name -ne $Mod.installedFile.id } | Remove-Item -Force
     }
 }
 
@@ -186,15 +202,22 @@ function Save-ModFiles {
 
     New-Item -ItemType Directory -Path "$ReleaseFolder\mods" | Out-Null
 
-    $minecraftInstanceJson = Get-Content $MINECRAFT_INSTANCE_FILE | ConvertFrom-Json
+    # Track a list of mod IDs to clean up the cache later
+    $modIds = @()
 
+    $minecraftInstanceJson = Get-Content $MINECRAFT_INSTANCE_FILE | ConvertFrom-Json
     foreach ($addon in $minecraftInstanceJson.installedAddons) {
+        $modIds += $addon.addonID
+
         if ($CLIENT_ONLY_MODS -contains $addon.addonID) {
             continue
         }
 
         Save-ModFile -Mod $addon
     }
+
+    # Cleanup old cached files
+    Get-ChildItem -Path $CACHE_FOLDER | Where-Object { $_.Name -notin $modIds } | Remove-Item -Recurse -Force
 }
 
 function Save-ModList {

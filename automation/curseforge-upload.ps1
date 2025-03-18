@@ -48,7 +48,7 @@ function Invoke-UploadArchive {
 
     $url = "https://minecraft.curseforge.com/api/projects/$ModpackId/upload-file"
     Write-Host $Archive
-    $response = curl.exe `
+    $responseRaw = curl.exe `
         -sSL `
         -X POST `
         -H "Accept: application/json" `
@@ -57,14 +57,22 @@ function Invoke-UploadArchive {
         -F "metadata=$(ConvertTo-Json -Compress $uploadMetadata)" `
         -F "file=@$Archive" `
         --progress-bar `
-        "$url" | ConvertFrom-Json
-    if (-not $response.id) {
-        Write-Error "Failed to upload archive $Archive to CurseForge: $response"
+        "$url"
+    
+    try {
+        $response = ConvertFrom-Json $responseRaw
+
+        if (-not $response.id) {
+            Write-Error "Failed to upload archive $Archive to CurseForge: $response"
+            exit 1
+        }
+        Write-Host "Uploaded archive $Archive to CurseForge, with file ID $($response.id)"
+        return $response.id
+    } catch {
+        Write-Error "Failed to parse response from CurseForge API"
+        Write-Error $responseRaw
         exit 1
     }
-    Write-Host "Uploaded archive $Archive to CurseForge, with file ID $($response.id)"
-
-    return $response.id
 }
 
 function Invoke-RetryUploadArchive {
@@ -92,6 +100,7 @@ function Invoke-RetryUploadArchive {
                 throw "Failed to upload archive $Archive to CurseForge after $maxAttempts attempts"
             }
 
+            Write-Error $_
             Write-Host "Failed to upload archive $Archive to CurseForge, retrying in $retryDelay seconds..."
             Start-Sleep -Seconds $retryDelay
         }

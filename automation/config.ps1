@@ -68,10 +68,21 @@ $REPLACEMENTS_IGNORE = @(
     "\.zip$"
 )
 
+# An array of modrinth mods to include in the modpack.
+# This is used to download the mods from modrinth and include them in the modpack.
+# Will only work for mods that are on CurseForge's "Approved Non-CurseForge" list.
+# https://docs.google.com/spreadsheets/d/176Wv-PZUo9hFxy6oC6N8tWdquBLPRtSuLbNK-r0_byM/edit
+$MODRINTH_EXTERNAL_MODS = @(
+    @{
+        ProjectID  = "cc-tweaked"
+        Version    = "1.115.1"
+    }
+)
+
 # CurseForge project ID of the modpack
-$MODPACK_MOD_ID = 1220805
+$CURSEFORGE_PROJECT_ID = 1220805
 # The pair of CurseForge game version IDs that the modpack supports
-$MODPACK_GAME_VERSIONS = @(7498, 9990)
+$CURSEFORGE_GAME_VERSIONS = @(7498, 9990)
 
 # Version of the ModListCreator to use (internal)
 $MODLISTCREATOR_VERSION = "5.0.0"

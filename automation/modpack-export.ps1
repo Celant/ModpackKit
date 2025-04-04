@@ -38,6 +38,7 @@ function New-ClientRelease {
     Move-ContentToOverrides -ReleaseFolder $releaseFolder
 
     Save-ModList -ReleaseFolder $releaseFolder
+    Save-ExternalModList -ReleaseFolder $releaseFolder
     New-ReleaseZip -ReleaseFolder $releaseFolder -ReleaseVersion $ReleaseVersion -DestFolder "$BUILDS_FOLDER\client"
 }
 
@@ -60,7 +61,7 @@ function New-ServerRelease {
     New-ManifestJson -ReleaseFolder $releaseFolder -ReleaseVersion $ReleaseVersion -Server
 
     # Write the main pack content to the release folder
-    Write-Content -ReleaseFolder $releaseFolder
+    Write-Content -ReleaseFolder $releaseFolder -Server $true
 
     # Write server-specific files
     Write-ServerFiles -ReleaseFolder $releaseFolder
@@ -71,6 +72,7 @@ function New-ServerRelease {
     Write-FileReplacements -ReleaseFolder $releaseFolder
 
     Save-ModList -ReleaseFolder $releaseFolder
+    Save-ExternalModList -ReleaseFolder $releaseFolder -Server $true
     New-ReleaseZip -ReleaseFolder $releaseFolder -ReleaseVersion $ReleaseVersion -DestFolder "$BUILDS_FOLDER\server" -Suffix "-server"
 }
 
@@ -103,7 +105,8 @@ function Copy-Templates {
 
 function Write-Content {
     param (
-        [string]$ReleaseFolder
+        [string]$ReleaseFolder,
+        [boolean]$Server = $false
     )
 
     foreach ($content in Get-ContentPaths) {
@@ -122,6 +125,99 @@ function Write-Content {
         Copy-Item -Path $content -Destination $destination -Force
         Write-Host "Copied $content to $destination" -ForegroundColor Cyan
     }
+
+    # Write Modrinth external mods
+    Write-ModrinthExternalMods -ReleaseFolder $ReleaseFolder -Server $Server
+}
+
+function Write-ModrinthExternalMods {
+    param (
+        [string]$ReleaseFolder,
+        [boolean]$Server = $false
+    )
+
+    $mods = Get-ModrinthExternalMods -Server $true
+    if ($mods.Count -eq 0) {
+        return
+    }
+    Write-Host "Found $($mods.Count) external mods" -ForegroundColor Cyan
+
+    $modsFolder = Join-Path -Path $ReleaseFolder -ChildPath "mods"
+    if (-not (Test-Path $modsFolder)) {
+        New-Item -ItemType Directory -Path $modsFolder | Out-Null
+    }
+
+    $mods | ForEach-Object {
+        $modFileName = $_.FileName
+        $modFilePath = Join-Path -Path $modsFolder -ChildPath $modFileName
+
+        Write-Host "Downloading Modrinth mod: $modFileName" -ForegroundColor Cyan
+        Invoke-WebRequest -Uri $_.DownloadUrl -OutFile $modFilePath
+    }
+}
+
+function Get-ModrinthExternalMods {
+    param (
+        [boolean]$Server = $false
+    )
+
+    $externalMods = @()
+
+    $MODRINTH_EXTERNAL_MODS | ForEach-Object {
+        if ($Server -and $_.ClientOnly) {
+            return
+        }
+
+        $projectId = $_.ProjectID
+        $version = $_.Version
+
+        $modrinthUrl = "https://api.modrinth.com/v2/project/$projectId/version/$version"
+        $modrinthData = Invoke-RestMethod -Uri $modrinthUrl -Method Get
+
+        if ($modrinthData) {
+            $externalMod = @{
+                ProjectId = $projectId
+                Version   = $version
+                ProjectUrl = "https://modrinth.com/mod/$projectId"
+            }
+
+            if ($modrinthData.files.Count -eq 0) {
+                Write-Host "No files found for mod $projectId version $version" -ForegroundColor Red
+                return
+            }
+
+            # Get file marked as primary, or first file if none is marked as primary
+            $primaryFile = $modrinthData.files | Where-Object { $_.primary -eq $true }
+            if ($primaryFile) {
+                $externalMod["FileName"] = $primaryFile.filename
+                $externalMod["DownloadUrl"] = $primaryFile.url
+            } else {
+                $externalMod["FileName"] = $modrinthData.files[0].filename
+                $externalMod["DownloadUrl"] = $modrinthData.files[0].url
+            }
+
+            # Fetch project author
+            $modrinthUrl = "https://api.modrinth.com/v2/project/$projectId"
+            $modrinthData = Invoke-RestMethod -Uri $modrinthUrl -Method Get
+            if ($modrinthData) {
+                if ($modrinthData.team) {
+                    $modrinthUrl = "https://api.modrinth.com/v2/team/$($modrinthData.team)/members"
+                    $modrinthData = Invoke-RestMethod -Uri $modrinthUrl -Method Get
+                    if ($modrinthData) {
+                        $owner = $modrinthData | Where-Object { $_.role -eq "owner" }
+                        $externalMod["Author"] = @{
+                            Name = $owner.user.username
+                            Url = "https://modrinth.com/user/$($owner.user.username)"
+                        }
+                    }
+                }
+            }
+
+            $externalMods = @($externalMods + $externalMod)
+        }
+    }
+
+    return ,$externalMods
 }
 
 function Move-ContentToOverrides {
@@ -131,16 +227,16 @@ function Move-ContentToOverrides {
 
     New-Item -ItemType Directory -Path "$ReleaseFolder\$OVERRIDES_FOLDER" | Out-Null
 
-    foreach ($override in $CONTENT_FOLDERS) {
-        $source = "$ReleaseFolder\$override"
-        $destination = "$ReleaseFolder\$OVERRIDES_FOLDER\$override"
+    foreach ($content in $CONTENT_FOLDERS) {
+        $source = "$ReleaseFolder\$content"
+        $destination = "$ReleaseFolder\$OVERRIDES_FOLDER\$content"
 
         if (-not (Test-Path $source)) {
             continue
         }
 
         Move-Item -Path $source -Destination $destination -Force
-        Write-Host "Moved $override to $destination" -ForegroundColor Cyan
+        Write-Host "Moved $content to $destination" -ForegroundColor Cyan
     }
 }
 
@@ -200,7 +296,10 @@ function Save-ModFiles {
         throw "minecraftinstance.json file not found."
     }
 
-    New-Item -ItemType Directory -Path "$ReleaseFolder\mods" | Out-Null
+    $modsFolder = "$ReleaseFolder\mods"
+    if (-not (Test-Path $modsFolder)) {
+        New-Item -ItemType Directory -Path $modsFolder | Out-Null
+    }
 
     # Track a list of mod IDs to clean up the cache later
     $modIds = @()
@@ -250,6 +349,33 @@ function Save-ModList {
 
     Write-Host "Creating mod list..." -ForegroundColor Cyan
     & java @javaArgs
+}
+
+function Save-ExternalModList {
+    param (
+        [string]$ReleaseFolder,
+        [boolean]$Server = $false
+    )
+
+    $modListOutput = Join-Path $ReleaseFolder "MODLIST.md"
+
+    $externalMods = Get-ModrinthExternalMods -Server $Server
+    if ($externalMods.Count -eq 0) {
+        return
+    }
+
+    # Append mod list and header to modlist file
+    $externalModList = "### External Mods"
+    $externalModList += "`r`n"
+
+    $externalMods | ForEach-Object {
+        $externalModList += "  * [$($_.FileName)]($($_.ProjectUrl)) (by [$($_.Author.Name)]($($_.Author.Url)))"
+        $externalModList += "`r`n"
+    }
+
+    # Write the external mod list to the bottom of the mod list
+    Add-Content -Path $modListOutput -Value $externalModList
+    Write-Host "Appended external mod list to $modListOutput" -ForegroundColor Cyan
 }
 
 function New-ReleaseZip {

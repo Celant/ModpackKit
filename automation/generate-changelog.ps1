@@ -104,11 +104,11 @@ function Invoke-GenerateChangelog {
 }
 
 #Assert-VersionExists -ReleaseVersion $ReleaseVersion
-$latestRelease = Get-ModpackLatestReleaseFile -ModpackId $MODPACK_MOD_ID
+$latestRelease = Get-ModpackLatestReleaseFile -ModpackId $CURSEFORGE_PROJECT_ID
 if ($latestRelease) {
     Write-Host "Current published release: $($latestRelease.fileName)"
 
-    Save-ModpackReleaseFile -ModpackId $MODPACK_MOD_ID -FileId $latestRelease.id
+    Save-ModpackReleaseFile -ModpackId $CURSEFORGE_PROJECT_ID -FileId $latestRelease.id
     Write-Host "Downloaded previous version to $INSTANCE_ROOT\$BUILDS_FOLDER\previous.zip"
 }
 $hasPreviousRelease = $null -ne $latestRelease

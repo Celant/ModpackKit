@@ -41,7 +41,7 @@ function Invoke-UploadArchive {
     if ($ParentFileId) {
         $uploadMetadata["parentFileID"] = $ParentFileId
     } else {
-        $uploadMetadata["gameVersions"] = $MODPACK_GAME_VERSIONS
+        $uploadMetadata["gameVersions"] = $CURSEFORGE_GAME_VERSIONS
     }
 
     Write-Host "Uploading archive $Archive to CurseForge..."
@@ -117,9 +117,9 @@ if (Test-Path $ChangelogFile) {
     $changelog = Get-Content $ChangelogFile -Raw
 }
 
-$fileId = Invoke-RetryUploadArchive -Archive $ClientArchive -ModpackId $MODPACK_MOD_ID -Changelog $changelog
+$fileId = Invoke-RetryUploadArchive -Archive $ClientArchive -ModpackId $CURSEFORGE_PROJECT_ID -Changelog $changelog
 Start-Sleep -Seconds 10
 
 if ($ServerArchive) {
-    Invoke-RetryUploadArchive -Archive $ServerArchive -ModpackId $MODPACK_MOD_ID -Changelog $changelog -ParentFileId $fileId
+    Invoke-RetryUploadArchive -Archive $ServerArchive -ModpackId $CURSEFORGE_PROJECT_ID -Changelog $changelog -ParentFileId $fileId
 }

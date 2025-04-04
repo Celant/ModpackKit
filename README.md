@@ -44,14 +44,14 @@ Our automation scripts have a single shared config file that requires some info 
 # Friendly name of the modpack
 $MODPACK_NAME = "My Cool Modpack"
 # CurseForge project ID of the modpack
-$MODPACK_MOD_ID = 1220805
+$CURSEFORGE_PROJECT_ID = 1220805
 # The pair of CurseForge game version IDs that the modpack supports
-$MODPACK_GAME_VERSIONS = @(7498, 9990)
+$CURSEFORGE_GAME_VERSIONS = @(7498, 9990)
 ```
 
 If you don't have the CurseForge project ID yet, that's fine. It can be skipped for now, but note that you can't publish a release or generate a changelog without it, and CurseForge can take a while to approve new projects.
 
-The `$MODPACK_GAME_VERSIONS` can be hard to find, but are available in the [CurseForge Game Versions API](https://support.curseforge.com/en/support/solutions/articles/9000197321-curseforge-api#Game-Versions-API) response. The above values correspond to "Forge" and "1.20.1" respectively.
+The `$CURSEFORGE_GAME_VERSIONS` can be hard to find, but are available in the [CurseForge Game Versions API](https://support.curseforge.com/en/support/solutions/articles/9000197321-curseforge-api#Game-Versions-API) response. The above values correspond to "Forge" and "1.20.1" respectively.
 
 ### Setting Up Automation Git Hooks
 
@@ -231,6 +231,35 @@ modpack project ID and modpack version for
 [Better Compatibility Checker](https://www.curseforge.com/minecraft/mc-mods/better-compatibility-checker).
 This allows clients to easily see when their version of the modpack differs from the server.
 Whilst it _does_ only work if you have the mod in your pack, we definitely recommend it!
+
+## External Mods
+
+Some mods are no longer available or published on CurseForge, but a few of them are still able to be used in CurseForge modpacks thanks to the [Approved Non-CurseForge Mods List](https://docs.google.com/spreadsheets/d/176Wv-PZUo9hFxy6oC6N8tWdquBLPRtSuLbNK-r0_byM/edit?usp=sharing). Generally if you upload a modpack to CurseForge that contains a .jar in the mods folder (rather than using the manifest), it will automatically be rejected.
+
+Thankfully, if a mod is on the above list, you're still able to include it in your pack and have it distributed by CurseForge. To make this easier, our automation scripts allow you to fetch mods from [Modrinth](https://modrinth.com/) at the time of exporting.
+
+### Adding Modrinth mods
+
+To add a Modrinth mod into your CurseForge pack, it _must_ be on the approved list as mentioned above. If it is, you just need to include the mod in the `.\automation\config.ps1` file:
+```pwsh
+$MODRINTH_EXTERNAL_MODS = @(
+    @{
+        ProjectID  = "cc-tweaked"
+        Version    = "1.115.1"
+    }
+)
+```
+
+You can also specify a Modrinth mod as client-only, so it is not included when exporting the server pack:
+```pwsh
+$MODRINTH_EXTERNAL_MODS = @(
+    @{
+        ProjectID  = "some-ui-tweak-mod"
+        Version    = "1.115.1"
+        ClientOnly = $true
+    }
+)
+```
 
 ## Exporting/Publishing
 

@@ -148,7 +148,7 @@ function Get-FileReplacements {
         "\[\[MINECRAFT_VERSION\]\]" = $minecraftVersion
         "\[\[FORGE_VERSION\]\]" = $forgeVersion
         "\[\[MODPACK_NAME\]\]" = $MODPACK_NAME
-        "\[\[MODPACK_PROJECT_ID\]\]" = $MODPACK_MOD_ID
+        "\[\[MODPACK_PROJECT_ID\]\]" = $CURSEFORGE_PROJECT_ID
         "\[\[MODPACK_VERSION\]\]" = $ReleaseVersion
     }
 
